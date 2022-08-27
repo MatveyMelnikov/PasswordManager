@@ -2,6 +2,6 @@
 {
     internal interface IHashAlgorithm
     {
-        public byte[] GetHash(string data, string salt);
+        public byte[] GetHash(in byte[] data, in byte[] salt);
     }
 }

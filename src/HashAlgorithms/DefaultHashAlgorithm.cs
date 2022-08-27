@@ -25,33 +25,6 @@ namespace HashAlgorithms
         // The key is equal in length to the data
         protected byte[] HashBlock(ref byte[] data, in byte[] key)
         {
-            /*BitPosition? swapPosition = null;
-
-            for (int bytesIndex = 0; bytesIndex < key.Length; bytesIndex++)
-            {
-                for (byte bitsIndex = 0; bitsIndex < 8; bitsIndex++)
-                {
-                    if (BitOperations.GetBit(key[bytesIndex], bitsIndex))
-                    {
-                        if (swapPosition == null)
-                        {
-                            swapPosition = new BitPosition(bytesIndex, bitsIndex);
-                        }
-                        else
-                        {
-                            BitPosition currentPosition = new BitPosition(bytesIndex, bitsIndex);
-
-                            BitOperations.SwapBits(
-                                ref data, 
-                                swapPosition ?? default(BitPosition), 
-                                currentPosition
-                            );
-                            swapPosition = null;
-                        }
-                    }
-                }
-            }*/
-
             BitOperations.SwapBitsByTemplate(ref data, key);
 
             BitOperations.XORBytes(ref data, key);
@@ -59,17 +32,17 @@ namespace HashAlgorithms
             return GetPBKDF2Hash(data, key);
         }
 
-        public byte[] GetHash(string data, string salt)
+        public byte[] GetHash(in byte[] data, in byte[] salt)
         {
-            byte[] dataInBytes = Encoding.Default.GetBytes(data);
-            byte[] saltInBytes = Encoding.Default.GetBytes(salt);
+            byte[] currentData = (byte[])data.Clone();
+            byte[] currentSalt = (byte[])data.Clone();
             for (int i = 0; i < ITERATIONS; i++)
             {
-                dataInBytes = HashBlock(ref dataInBytes, saltInBytes);
-                saltInBytes = GetPBKDF2Hash(dataInBytes, saltInBytes);
+                currentData = HashBlock(ref currentData, currentSalt);
+                currentSalt = GetPBKDF2Hash(currentData, currentSalt);
             }
 
-            return dataInBytes;
+            return currentData;
         }
     }
 }

@@ -15,7 +15,7 @@ namespace Operations
 
         public static bool GetBit(in byte[] data, in BitPosition position)
         {
-            return GetBit(data[position.bytePosition], position.bitPosition);
+            return GetBit(data[position.BytePosition], position.BitInBytePosition);
         }
 
         public static void SetBit(ref byte data, in byte position, in bool value)
@@ -26,7 +26,7 @@ namespace Operations
 
         public static void SetBit(ref byte[] data, in BitPosition position, in bool value)
         {
-            SetBit(ref data[position.bytePosition], position.bitPosition, value);
+            SetBit(ref data[position.BytePosition], position.BitInBytePosition, value);
         }
 
         public static void SwapBits(ref byte[] data, in BitPosition positionA, in BitPosition positionB)
