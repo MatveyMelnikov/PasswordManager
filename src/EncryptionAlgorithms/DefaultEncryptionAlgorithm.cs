@@ -1,6 +1,4 @@
-﻿using System;
-using Operations;
-using System.Text;
+﻿using Operations;
 
 namespace EncryptionAlgorithms
 {

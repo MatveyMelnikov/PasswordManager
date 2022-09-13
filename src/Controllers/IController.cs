@@ -17,5 +17,11 @@
         public string? GetDataFileName();
         public string[]? GetAllDataFiles();
         public void ChangeDataFileName(string name);
+        public string[]? GetAllPluginTitles();
+        public void SetPlugin(
+            string pluginTitle,
+            bool reEncryptData,
+            bool reEncryptLoginData
+        );
     }
 }

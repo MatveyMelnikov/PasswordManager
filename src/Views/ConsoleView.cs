@@ -13,7 +13,7 @@ namespace Views
             while (true)
             {
                 if (_controller.IsRegistered)
-                    Console.WriteLine("--LogIn--");
+                    Console.WriteLine("--SignIn--");
                 else
                     Console.WriteLine("--Registration--");
 
@@ -60,6 +60,9 @@ namespace Views
                 case "4":
                     ChangeDataFileName();
                     break;
+                case "5":
+                    SetPlugin();
+                    break;
                 default:
                     break;
             }
@@ -82,7 +85,7 @@ namespace Views
             Console.WriteLine("2) Add new note;");
             Console.WriteLine("3) Delete note;");
             Console.WriteLine("4) Change data file;");
-            Console.WriteLine("5) Create data file;");
+            Console.WriteLine("5) Set plugin;");
             Console.WriteLine($"--Notes ({_controller!.GetDataFileName()})--");
 
             string[]? titles = _controller.GetNotesTitles();
@@ -197,7 +200,45 @@ namespace Views
             _controller!.ChangeDataFileName(dataFiles[dataFileNum]);
         }
 
-        bool IsInit()
+        protected void SetPlugin()
+        {
+            if (!IsInit())
+                throw new Exception("View did not initialize required fields");
+
+            string[]? pluginFiles = _controller!.GetAllPluginTitles();
+            if (pluginFiles == null)
+                return;
+
+            Console.WriteLine("-Plugins:");
+            Console.WriteLine("1) Set by default");
+            for (int i = 0; i < pluginFiles.Length; i++)
+                Console.WriteLine($"{i + 2}) {pluginFiles[i]}");
+
+            Console.WriteLine("-Enter the plugin file number to install it as a current:");
+            int pluginFileNum = 0;
+            try
+            {
+                pluginFileNum = Convert.ToInt32(Console.ReadLine());
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Input error: {e.GetType}");
+                ConsolePause();
+                return;
+            }
+            pluginFileNum -= 2;
+            string pluginName = pluginFileNum == -1 ? "default" : pluginFiles[pluginFileNum];
+
+            Console.WriteLine("-Do you want to re-encrypt all data files? (\"yes\" for confirmation):");
+            bool reEncryptData = Console.ReadLine()?.ToLower() == "yes" ? true : false;
+
+            Console.WriteLine("-Do you want to re-encrypt login data? (\"yes\" for confirmation):");
+            bool reEncryptLoginData = Console.ReadLine()?.ToLower() == "yes" ? true : false;
+
+            _controller.SetPlugin(pluginName, reEncryptData, reEncryptLoginData);
+        }
+
+        protected bool IsInit()
         {
             if (_controller == null)
                 return false;

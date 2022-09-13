@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Reflection;
+﻿using System.Reflection;
+using System.Text.Json;
 
 namespace FileSystem
 {
@@ -11,9 +7,10 @@ namespace FileSystem
     {
         protected string _dataFolderPath = String.Empty;
         protected string _loginDetailsPath = String.Empty;
+        protected string _configPath = String.Empty;
 
-        protected LoginDetails? _loginDetails = null;
-        public LoginDetails? LoginDetails
+        protected LoginData? _loginDetails = null;
+        public LoginData? LoginDetails
         {
             get => _loginDetails;
             protected set => _loginDetails = value;
@@ -38,47 +35,54 @@ namespace FileSystem
                 ReadNotes();
             }
         }
+        protected ConfigData _currentConfig;
+        public ConfigData CurrentConfig { 
+            get => _currentConfig;  
+            set
+            {
+                _currentConfig = value;
+                SaveConfig();
+            }
+        }
 
         public FileManager(string DataFileName)
         {
-            // Create a data folder
+            // Create (open) a data folder
             string? location = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
             if (location == null)
                 throw new Exception("Executable location not received");
 
-            _dataFolderPath = Path.Combine(
-                location,
-                "Data"
-            );
+            _dataFolderPath = Path.Combine(location,"Data");
 
             if (!Directory.Exists(_dataFolderPath))
                 Directory.CreateDirectory(_dataFolderPath);
 
-            // Create a login details file
-            _loginDetailsPath = Path.Combine(
-                _dataFolderPath,
-                Path.GetFileNameWithoutExtension("LoginDetails") + ".dat"
-            );
-
-            /*if (!File.Exists(_loginDetailsPath))
-                using (File.Create(_loginDetailsPath)) { }
-            else
-                ReadLoginDetails();*/
+            // Create (open) a login details file
+            _loginDetailsPath = Path.Combine(_dataFolderPath, "LoginDetails.dat");
             CreateFile(_loginDetailsPath);
+
             ReadLoginDetails();
 
-            // Create a data file
+            // Create (open) a data file
             this.DataFileName = DataFileName;
-            //CreateFile(_dataFilePath);
-            //ReadNotes();
+
+            // Create (open) a config file
+            _configPath = Path.Combine(location, "Config.dat");
+            if (!File.Exists(_configPath))
+            {
+                using (File.Create(_configPath)) { }
+                CurrentConfig = new("Data", "default");
+            }
+            else
+            {
+                ReadConfig();
+            }
         }
 
         protected void CreateFile(string path)
         {
             if (!File.Exists(path))
                 using (File.Create(path)) { }
-            /*else
-                ReadNotes();*/
         }
 
         protected void ReadLoginDetails()
@@ -87,13 +91,16 @@ namespace FileSystem
                 File.Open(_loginDetailsPath, FileMode.OpenOrCreate, FileAccess.Read)
             ))
             {
-                byte[] hash = ReadBytesWithSize(reader);
-                byte[] salt = ReadBytesWithSize(reader);
-                _loginDetails = new(hash, salt);
+                if (reader.BaseStream.Position != reader.BaseStream.Length)
+                {
+                    byte[] hash = ReadBytesWithSize(reader);
+                    byte[] salt = ReadBytesWithSize(reader);
+                    _loginDetails = new(hash, salt);
+                }
             }
         }
 
-        public void SaveLoginDetails(LoginDetails loginDetails)
+        public void SaveLoginDetails(LoginData loginDetails)
         {
             using (BinaryWriter writer = new BinaryWriter(
                 File.Open(_loginDetailsPath, FileMode.Create, FileAccess.Write)
@@ -104,7 +111,7 @@ namespace FileSystem
             }
         }
 
-        // First write the number of characters in the string
+        // Firstly write the number of characters in the string
         protected byte[] ReadBytesWithSize(in BinaryReader reader)
         {
             int stringSize = reader.ReadInt32();
@@ -178,6 +185,12 @@ namespace FileSystem
             SaveNotes();
         }
 
+        public void DeleteAllNotes()
+        {
+            _notes.Clear();
+            SaveNotes();
+        }
+
         public string[]? GetAllDataFiles()
         {
             // Get all data files in data folder
@@ -185,17 +198,46 @@ namespace FileSystem
             if (location == null)
                 return null;
 
-            String dataPath = Path.Combine(
-                location,
-                "data"
-            );
-
-            IEnumerable<string> dataFiles = Directory.GetFiles(dataPath, "*").Where(path =>
-                Path.GetExtension(path) == ".dat" && Path.GetFileName(path) != "LoginDetails.dat"
-            );
-            dataFiles = dataFiles.Select(path => Path.GetFileName(path));
+            IEnumerable<string> dataFiles = Directory.GetFiles(_dataFolderPath, "*")
+                .Where(path => Path.GetExtension(path) == ".dat" && 
+                    Path.GetFileName(path) != "LoginDetails.dat")
+                .Select(path => Path.GetFileName(path));
 
             return dataFiles.ToArray();
+        }
+
+        protected void ReadConfig()
+        {
+            using (StreamReader reader = new StreamReader(
+                File.Open(_configPath, FileMode.OpenOrCreate, FileAccess.Read)
+            ))
+            {
+                _currentConfig = JsonSerializer.Deserialize<ConfigData>(reader.ReadToEnd());
+            }
+        }
+
+        public void SaveConfig()
+        {
+            using (StreamWriter writer = new StreamWriter(
+                File.Open(_configPath, FileMode.Create, FileAccess.Write)
+            ))
+            {
+                Console.WriteLine(JsonSerializer.Serialize(
+                    _currentConfig,
+                    new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    }
+                ));
+
+                writer.Write(JsonSerializer.Serialize(
+                    _currentConfig,
+                    new JsonSerializerOptions
+                    {
+                        WriteIndented = true
+                    }
+                ));
+            }
         }
     }
 }
