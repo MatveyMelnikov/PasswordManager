@@ -5,15 +5,16 @@ namespace FileSystem
 {
     internal class FileManager
     {
-        protected string _dataFolderPath = String.Empty;
-        protected string _loginDetailsPath = String.Empty;
-        protected string _configPath = String.Empty;
-
+        // Public fields
         protected LoginData? _loginDetails = null;
         public LoginData? LoginDetails
         {
             get => _loginDetails;
-            protected set => _loginDetails = value;
+            set
+            {
+                _loginDetails = value;
+                SaveLoginDetails();
+            }
         }
         protected List<Note> _notes = new();
         public List<Note> Notes
@@ -24,7 +25,7 @@ namespace FileSystem
         protected string _dataFilePath = String.Empty;
         public string DataFileName
         {
-            get => Path.GetFileName(_dataFilePath);
+            get => Path.GetFileNameWithoutExtension(_dataFilePath);
             set
             {
                 _dataFilePath = Path.Combine(
@@ -45,6 +46,12 @@ namespace FileSystem
             }
         }
 
+        // Protected fields
+        protected string _dataFolderPath = String.Empty;
+        protected string _loginDetailsPath = String.Empty;
+        protected string _configPath = String.Empty;
+
+        // Methods
         public FileManager(string DataFileName)
         {
             // Create (open) a data folder
@@ -100,30 +107,46 @@ namespace FileSystem
             }
         }
 
-        public void SaveLoginDetails(LoginData loginDetails)
+        protected void SaveLoginDetails()
         {
+            if (_loginDetails == null)
+                return;
+
             using (BinaryWriter writer = new BinaryWriter(
                 File.Open(_loginDetailsPath, FileMode.Create, FileAccess.Write)
             ))
             {
-                WriteBytesWithSize(writer, loginDetails.Hash);
-                WriteBytesWithSize(writer, loginDetails.Salt);
+                WriteBytesWithSize(writer, _loginDetails.Value.Hash);
+                WriteBytesWithSize(writer, _loginDetails.Value.Salt);
             }
         }
 
-        // Firstly write the number of characters in the string
+        /// <summary>
+        /// Reads bytes in a binary file. 
+        /// The data must be in the format: number of bytes (int32) + data
+        /// </summary>
         protected byte[] ReadBytesWithSize(in BinaryReader reader)
         {
             int stringSize = reader.ReadInt32();
             return reader.ReadBytes(stringSize);
         }
 
+        /// <summary>
+        /// Writes bytes to a binary file. 
+        /// The data is written in the format: number of bytes (int32) + data
+        /// </summary>
         protected void WriteBytesWithSize(in BinaryWriter writer, in byte[] data)
         {
             writer.Write(data.Length);
             writer.Write(data);
         }
 
+        /// <summary>
+        /// Reads notes from a binary file.
+        /// The data must be in the format:
+        /// target (string) + first field (bytes) + second field (bytes) + 
+        /// salt for first field (bytes) + salt for second field (bytes)
+        /// </summary>
         protected void ReadNotes()
         {
             _notes.Clear();
@@ -144,6 +167,12 @@ namespace FileSystem
             }
         }
 
+        /// <summary>
+        /// Writes notes to a binary file.
+        /// The data is written in the format:
+        /// target (string) + first field (bytes) + second field (bytes) + 
+        /// salt for first field (bytes) + salt for second field (bytes)
+        /// </summary>
         public void SaveNotes()
         {
             using (BinaryWriter writer = new BinaryWriter(
@@ -216,20 +245,12 @@ namespace FileSystem
             }
         }
 
-        public void SaveConfig()
+        protected void SaveConfig()
         {
             using (StreamWriter writer = new StreamWriter(
                 File.Open(_configPath, FileMode.Create, FileAccess.Write)
             ))
             {
-                Console.WriteLine(JsonSerializer.Serialize(
-                    _currentConfig,
-                    new JsonSerializerOptions
-                    {
-                        WriteIndented = true
-                    }
-                ));
-
                 writer.Write(JsonSerializer.Serialize(
                     _currentConfig,
                     new JsonSerializerOptions

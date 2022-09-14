@@ -4,6 +4,7 @@ namespace EncryptionAlgorithms
 {
     internal class DefaultEncryptionAlgorithm : IEncryptionAlgorithm
     {
+        // Methods
         /// <summary>
         /// Byte array expansion. Used when the key is larger than the encrypted block
         /// </summary>
@@ -18,6 +19,9 @@ namespace EncryptionAlgorithms
             return extendedData;
         }
 
+        /// <summary>
+        /// Returns a subsequence of elements as an array
+        /// </summary>
         protected byte[] GetSubArray(in byte[] data, in int positionA, in int positionB)
         {
             byte[] result = new byte[positionB - positionA];
@@ -25,6 +29,10 @@ namespace EncryptionAlgorithms
             return result;
         }
 
+        /// <summary>
+        /// Returns the position of the current encryption part as 
+        /// the positions of the first and last elements
+        /// </summary>
         protected (int, int) CalculatePositions(int numOfBlock, int dataLength, int keyLength)
         {
             int firstPosition = numOfBlock * keyLength;

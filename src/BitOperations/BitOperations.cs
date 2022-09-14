@@ -8,6 +8,7 @@ namespace Operations
 {
     internal static class BitOperations
     {
+        // Methods
         public static bool GetBit(in byte data, in byte position)
         {
             return (data & (1 << position)) != 0;
@@ -69,6 +70,10 @@ namespace Operations
             }
         }
 
+        /// <summary>
+        /// Performs an exclusive or on a subsequence of the elements of the first array. 
+        /// The numbering of the second array remains the same
+        /// </summary>
         public static void XORBytes(ref byte[] dataA, in byte[] dataB, in int positionA, in int positionB)
         {
             for (int i = positionA; i < positionB; i++)
@@ -77,6 +82,10 @@ namespace Operations
             }
         }
 
+        /// <summary>
+        /// Performs exclusive or for all elements of the first array. 
+        /// Arrays must be the same size
+        /// </summary>
         public static void XORBytes(ref byte[] dataA, in byte[] dataB)
         {
             XORBytes(ref dataA, dataB, 0, dataA.Length);

@@ -9,26 +9,57 @@ namespace Controllers
 {
     internal class Controller : IController
     {
+        // Public fields
+        public bool IsRegistered
+        {
+            get => !(_fileManager?.LoginDetails == null);
+        }
+        protected string currentPlugin = "default"; 
+        public string CurrentPlugin 
+        { 
+            get => currentPlugin;
+        }
+        public string[]? NotesTitles 
+        { 
+            get
+            {
+                checkInit();
+
+                string[] notes = new string[_fileManager!.Notes.Count];
+
+                for (int i = 0; i < notes.Length; i++)
+                    notes[i] = _fileManager.Notes[i].target;
+
+                return notes;
+            }
+        }
+        public string? DataFileName 
+        { 
+            get => _fileManager?.DataFileName;
+        }
+        public string[]? AllDataFilesTitles 
+        { 
+            get => _fileManager!.GetAllDataFiles(); 
+        }
+        public string[]? AllPluginsTitles 
+        { 
+            get => _pluginManager.GetAllPluginsTitles(); 
+        }
+
+        // Protected fields
         protected FileManager? _fileManager = null;
         protected PluginManager _pluginManager = new();
         protected IHashAlgorithm? _hashAlgorithm = null;
         protected IEncryptionAlgorithm? _encryptionAlgorithm = null;
         protected byte[]? _key = null;
 
-        public bool IsRegistered
-        {
-            get => !(_fileManager?.LoginDetails == null);
-        }
-
+        // Methods
         public void Init()
         {
             _fileManager = new("Data");
 
             SetPlugin(_fileManager.CurrentConfig.DefaultAlgorithm, false, false);
             _fileManager.DataFileName = _fileManager.CurrentConfig.DefaultDataFile;
-
-            //_hashAlgorithm = new DefaultHashAlgorithm();
-            //_encryptionAlgorithm = new DefaultEncryptionAlgorithm();
         }
 
         public bool Enter(string firstKeyWord, string secondKeyWord)
@@ -63,7 +94,7 @@ namespace Controllers
             byte[] hash = _hashAlgorithm!.GetHash(_key, salt);
             byte[] encryptedKey = _encryptionAlgorithm!.Encrypt(hash, _key);
 
-            _fileManager!.SaveLoginDetails(new LoginData(encryptedKey, salt));
+            _fileManager!.LoginDetails = new LoginData(encryptedKey, salt);
         }
 
         protected void Encrypt(
@@ -111,18 +142,6 @@ namespace Controllers
             _fileManager!.DeleteNote(position);
         }
 
-        public string[]? GetNotesTitles()
-        {
-            checkInit();
-
-            string[] titles = new string[_fileManager!.Notes.Count];
-
-            for (int i = 0; i < titles.Length; i++)
-                titles[i] = _fileManager.Notes[i].target;
-
-            return titles;
-        }
-
         protected string[]? Decrypt(int position, IEncryptionAlgorithm encryptionAlgorithm)
         {
             checkInit();
@@ -157,30 +176,11 @@ namespace Controllers
             return RandomNumberGenerator.GetBytes(length);
         }
 
-        public string? GetDataFileName()
-        {
-            checkInit();
-
-            return _fileManager!.DataFileName;
-        }
-
-        public string[]? GetAllDataFiles()
-        {
-            checkInit();
-
-            return _fileManager!.GetAllDataFiles();
-        }
-
         public void ChangeDataFileName(string name)
         {
             checkInit();
 
             _fileManager!.DataFileName = name;
-        }
-
-        public string[]? GetAllPluginTitles()
-        {
-            return _pluginManager.GetAllPluginsTitles();
         }
 
         public void ReEncryptAllData(
@@ -227,6 +227,7 @@ namespace Controllers
             {
                 newEncryptionAlgorithm = new DefaultEncryptionAlgorithm();
                 newHashAlgorithm = new DefaultHashAlgorithm();
+                currentPlugin = "default";
             }
             else
             {
@@ -244,6 +245,7 @@ namespace Controllers
                     newHashAlgorithm = hashAlgorithms.First();
                 else
                     newHashAlgorithm = new DefaultHashAlgorithm();
+                currentPlugin = pluginTitle;
             }
 
             // ReEncrypt login data
@@ -255,7 +257,7 @@ namespace Controllers
                 byte[] hash = newHashAlgorithm!.GetHash(_key, salt);
                 byte[] encryptedKey = newEncryptionAlgorithm!.Encrypt(hash, _key);
 
-                _fileManager!.SaveLoginDetails(new LoginData(encryptedKey, salt));
+                _fileManager!.LoginDetails = new LoginData(encryptedKey, salt);
                 _fileManager.CurrentConfig = new ConfigData(
                     _fileManager.CurrentConfig.DefaultDataFile,
                     pluginTitle

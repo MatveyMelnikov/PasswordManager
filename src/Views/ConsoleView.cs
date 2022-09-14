@@ -4,8 +4,10 @@ namespace Views
 {
     internal class ConsoleView : IView
     {
+        // Protected fields
         protected IController? _controller = null;
 
+        // Methods
         public void Init(IController controller)
         {
             _controller = controller;
@@ -86,9 +88,10 @@ namespace Views
             Console.WriteLine("3) Delete note;");
             Console.WriteLine("4) Change data file;");
             Console.WriteLine("5) Set plugin;");
-            Console.WriteLine($"--Notes ({_controller!.GetDataFileName()})--");
+            Console.WriteLine($"--Notes ({_controller!.DataFileName} | " +
+                $"{_controller!.CurrentPlugin})--");
 
-            string[]? titles = _controller.GetNotesTitles();
+            string[]? titles = _controller.NotesTitles;
             if (titles == null)
                 return;
 
@@ -98,6 +101,9 @@ namespace Views
             Console.WriteLine("-Enter the command number:");
         }
 
+        /// <summary>
+        /// Requests the note number from the current file and displays it
+        /// </summary>
         protected void ShowNote()
         {
             if (!IsInit())
@@ -126,6 +132,9 @@ namespace Views
             ConsolePause();
         }
 
+        /// <summary>
+        /// Reads the required fields and writes the note to the current file
+        /// </summary>
         protected void AddNote()
         {
             if (!IsInit())
@@ -149,6 +158,9 @@ namespace Views
             _controller!.Encrypt(target, firstKeyWord, secondKeyWord);
         }
 
+        /// <summary>
+        /// Requests the note number from the current file and delete it
+        /// </summary>
         protected void DeleteNote()
         {
             if (!IsInit())
@@ -169,12 +181,16 @@ namespace Views
             _controller!.DeleteNote(numOfNote - 1);
         }
 
+        /// <summary>
+        /// Lists all binaries in the data folder. 
+        /// After selecting the necessary - sets it as current
+        /// </summary>
         protected void ChangeDataFileName()
         {
             if (!IsInit())
                 throw new Exception("View did not initialize required fields");
 
-            string[]? dataFiles = _controller!.GetAllDataFiles();
+            string[]? dataFiles = _controller!.AllDataFilesTitles;
             if (dataFiles == null)
                 return;
 
@@ -200,12 +216,18 @@ namespace Views
             _controller!.ChangeDataFileName(dataFiles[dataFileNum]);
         }
 
+        /// <summary>
+        /// Lists all plugins in the plugins folder. 
+        /// After selecting the necessary - sets it as current.
+        /// In case of failure to load the encryption algorithm or the hash (or both) - 
+        /// will set the default algorithm
+        /// </summary>
         protected void SetPlugin()
         {
             if (!IsInit())
                 throw new Exception("View did not initialize required fields");
 
-            string[]? pluginFiles = _controller!.GetAllPluginTitles();
+            string[]? pluginFiles = _controller!.AllPluginsTitles;
             if (pluginFiles == null)
                 return;
 

@@ -6,8 +6,10 @@ namespace FileSystem
 {
     internal class PluginManager
     {
+        // Protected fields
         protected string _pluginsFolderPath = String.Empty;
 
+        // Methods
         public PluginManager()
         {
             string? location = Path.GetDirectoryName(Assembly.GetEntryAssembly()?.Location);
@@ -32,14 +34,17 @@ namespace FileSystem
 
             IEnumerable<string> dataFiles = Directory.GetFiles(_pluginsFolderPath, "*")
                 .Where(path => Path.GetExtension(path) == ".dll")
-                .Select(path => Path.GetFileName(path));
+                .Select(path => Path.GetFileNameWithoutExtension(path));
 
             return dataFiles.ToArray();
         }
 
+        /// <summary>
+        /// Returns the algorithm classes found in the library file
+        /// </summary>
         protected List<T>? GetAlgorithms<T>(string pluginTitle) where T : class
         {
-            Assembly? assembly = LoadAssembly(pluginTitle);
+            Assembly? assembly = LoadAssembly(pluginTitle + ".dll");
             if (assembly == null)
                 return null;
 
